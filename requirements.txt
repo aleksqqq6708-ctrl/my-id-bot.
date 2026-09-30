@@ -1,0 +1,58 @@
+﻿import asyncio
+from aiogram import Bot, Dispatcher, types
+from aiogram.filters import Command
+
+# Токен вашего бота
+API_TOKEN = '8835196862:AAHJ66ezl1wWzCx1ahktzKiCK3a7HUOt7L4'
+
+bot = Bot(token=API_TOKEN)
+dp = Dispatcher()
+
+# Приветствие при команде /start
+@dp.message(Command("start"))
+async def send_welcome(message: types.Message):
+    await message.reply(
+        "🆔 **Привет! Я бот для определения Telegram ID.**\n\n"
+        "👉 Перешлите мне сообщение от пользователя, из канала или группы, и я сразу выдам их уникальный ID!"
+    )
+
+# Обработка всех сообщений
+@dp.message()
+async def extract_id(message: types.Message):
+    # 1. Если переслано из КАНАЛА или ГРУППЫ
+    if message.forward_from_chat:
+        chat = message.forward_from_chat
+        await message.reply(
+            f"📢 **Информация о чате/канале:**\n\n"
+            f"🔹 **Название:** {chat.title}\n"
+            f"🔹 **Тип:** {chat.type.upper()}\n"
+            f"🆔 **Telegram ID:** `{chat.id}`"
+        )
+    
+    # 2. Если переслано от ПОЛЬЗОВАТЕЛЯ (человека)
+    elif message.forward_from:
+        user = message.forward_from
+        username_str = f"@{user.username}" if user.username else "Нет юзернейма"
+        await message.reply(
+            f"👤 **Информация о пользователе:**\n\n"
+            f"🔹 **Имя:** {user.first_name} {user.last_name or ''}\n"
+            f"🔹 **Юзернейм:** {username_str}\n"
+            f"🆔 **Telegram ID:** `{user.id}`"
+        )
+        
+    # 3. Если пользователь просто написал боту в личку (выдаем его собственный ID)
+    else:
+        await message.reply(
+            f"ℹ️ **Ваш личный ID:** `{message.from_user.id}`\n\n"
+            f"💡 _Чтобы узнать ID другого человека или канала, именно перешлите (Forward) мне их сообщение!_"
+        )
+
+async def main():
+    await bot.delete_webhook(drop_pending_updates=True)
+    print("Бот для выдачи ID успешно запущен!")
+    await dp.start_polling(bot)
+
+if __name__ == '__main__':
+    asyncio.run(main())
+
+aiogram==3.31.0
